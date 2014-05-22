@@ -5,23 +5,20 @@ var termkit = {
 
 // Load requirements.
 var http = require('http'),
-    io = require('socket.io-node'),
-    router = require("./router");
+    io = require('socket.io'),
+    router = require("./router"),
+    connect = require('connect');
 
 // Load config file.
 var config = require('./config').getConfig();
 
 // Set up http server.
-var server = http.createServer(function (request, result) {
-//  result.writeHeader(200, {'Content-Type': 'text/html'});
-//  result.writeBody('<h1>TermKit</h1>');
-//  result.finish();
-});
-
+app = connect().use(connect.static(__dirname+'/../HTML'));
+server = http.createServer(app);
 server.listen(2222);
 
 // Set up WebSocket and handlers.
-var ioServer = io.listen(server);
-ioServer.sockets.on('connection', function (client) {
+var socket = io.listen(server);
+socket.on('connection', function (client) {
   var p = new router.router(client);
 });

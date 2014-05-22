@@ -1,4 +1,4 @@
-var processor = require('processor');
+var processor = require('./processor');
 
 // Change to home directory.
 process.chdir(process.env.HOME);
