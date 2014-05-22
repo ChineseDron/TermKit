@@ -1,15 +1,15 @@
 var fs = require('fs'),
-    meta = require('shell/meta'),
-    view = require('view/view'),
-    asyncCallback = require('misc').asyncCallback;
-    async = require('misc').async,
-    extend = require('misc').extend,
-    JSONPretty = require('misc').JSONPretty,
-    composePath = require('misc').composePath,
-    objectKeys = require('misc').objectKeys,
-    reader = require('reader'),
-    escapeBinary = require('misc').escapeBinary,
-    escapeUnixText = require('misc').escapeUnixText;
+    meta = require('./meta'),
+    view = require('../view/view'),
+    asyncCallback = require('../misc').asyncCallback;
+    async = require('../misc').async,
+    extend = require('../misc').extend,
+    JSONPretty = require('../misc').JSONPretty,
+    composePath = require('../misc').composePath,
+    objectKeys = require('../misc').objectKeys,
+    reader = require('./reader'),
+    escapeBinary = require('../misc').escapeBinary,
+    escapeUnixText = require('../misc').escapeUnixText;
 
 /**
  * Error logger.
@@ -150,17 +150,17 @@ exports.plugins.pdf.prototype = extend(new exports.plugin(), {
   begin: function () {
 //    this.out.print(view.code('output', this.headers.generate(), 'text/plain'));
     this.out.print(view.html('output'));
-    
+
     // Buffered.
     return true;
   },
 
   data: function (data) {
-    
+
     // We wrap the HTML in an iframe for isolation.
     var url = 'data:application/pdf;base64,' + data.toString('base64');
         html = '<iframe class="termkitLimitHeight" src="'+ url +'"></iframe>';
-    
+
     this.out.update('output', { contents: html }, true);
   },
 
@@ -184,17 +184,17 @@ exports.plugins.html.prototype = extend(new exports.plugin(), {
   begin: function () {
 //    this.out.print(view.code('output', this.headers.generate(), 'text/plain'));
     this.out.print(view.html('output'));
-    
+
     // Buffered.
     return true;
   },
 
   data: function (data) {
-    
+
     // We wrap the HTML in an iframe for isolation.
     var url = 'data:text/html;base64,' + data.toString('base64');
         html = '<iframe class="termkitLimitHeight" src="'+ url +'"></iframe>';
-    
+
     this.out.update('output', { contents: html }, true);
   },
 
@@ -437,7 +437,7 @@ exports.plugins.binary.supports = function (headers) {
 exports.plugins.hex = function (headers, out) {
   // Inherit.
   exports.plugin.apply(this, arguments);
-  
+
   this.sent = 0;
   this.size = 0;
 };
@@ -452,12 +452,12 @@ exports.plugins.hex.prototype = extend(new exports.plugin(), {
   data: function (data) {
     var limit = 4096;
     this.size += data.length;
-    
+
     // Don't send more than limit.
     if (this.sent >= limit) {
       return;
     }
-    
+
     // Clip buffer if needed.
     if (this.sent + data.length > limit) {
       data = data.slice(0, limit - this.sent);
@@ -467,12 +467,12 @@ exports.plugins.hex.prototype = extend(new exports.plugin(), {
     // Append to hex view.
     this.out.update('output', { contents: data.toString('binary') }, true);
   },
-  
+
   end: function (exit) {
     if (this.size > this.sent) {
       this.out.print(this.size + " bytes total, " + this.sent + " shown.");
     }
-    
+
     exit();
   },
 
@@ -483,4 +483,3 @@ exports.plugins.hex.supports = function (headers) {
       schema = headers.get('Content-Type', 'schema');
   return !!(/^application\/octet-stream$/(type) && (schema == 'termkit.hex')) * 3;
 }
-

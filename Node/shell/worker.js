@@ -1,8 +1,3 @@
-require.paths.unshift('.');
-require.paths.unshift('..');
-require.paths.unshift(__dirname);
-require.paths.unshift(__dirname + '/..');
-
 var processor = require('processor');
 
 // Change to home directory.

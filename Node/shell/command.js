@@ -1,12 +1,12 @@
 var EventEmitter = require("events").EventEmitter,
-    outputFormatter = require('shell/formatter').formatter;
+    outputFormatter = require('./formatter').formatter;
     spawn = require('child_process').spawn,
-    view = require('view/view'),
-    meta = require('shell/meta'),
-    builtin = require('shell/builtin/builtin'),
-    async = require('misc').async,
-    whenDone = require('misc').whenDone,
-    returnObject = require('misc').returnObject,
+    view = require('../view/view'),
+    meta = require('./meta'),
+    builtin = require('./builtin/builtin'),
+    async = require('../misc').async,
+    whenDone = require('../misc').whenDone,
+    returnObject = require('../misc').returnObject,
 
     outputViewCounter = 1;
 
@@ -85,7 +85,7 @@ exports.commandList = function (processor, tokens, exit, rel) {
     });
     return exports.commandFactory(command, views[i].emitter, views[i].invoke, exit, environment);
   });
-  
+
   // Spawn and link together.
   var last, i;
   for (i in this.units) (function (unit) {
@@ -94,7 +94,7 @@ exports.commandList = function (processor, tokens, exit, rel) {
     }
     last = unit;
   })(this.units[i]);
-  
+
   // Add output formatter at the end.
   this.formatter = new outputFormatter(last, views[n].invoke, track(function () { }));
 };
@@ -131,7 +131,7 @@ exports.commandFactory = function (command, emitter, invoke, exit, environment) 
       unit.spawn();
     }
   }
-  
+
   return unit;
 };
 
@@ -152,11 +152,11 @@ exports.commandUnit.prototype = {
     this.process = {
       stdin: new EventEmitter(),
       stdout: new EventEmitter(),
-    };  
+    };
   },
-  
+
   go: function () { },
-  
+
   link: function (to) {
     var that = this;
     // Link this stdout to next stdin (data stream).
@@ -193,7 +193,7 @@ exports.commandUnit.builtinCommand.prototype.spawn = function () {
   } catch (e) {
     throw "Error loading handler '"+ prefix +"': " + e;
   }
-  
+
   // Make fake process.
   var fake    = new EventEmitter();
   fake.stdin  = new EventEmitter();
@@ -232,13 +232,13 @@ exports.commandUnit.builtinCommand.prototype.spawn = function () {
   };
   fake.stderr.end = function () {
   };
-  
+
   this.process = fake;
 };
 
 exports.commandUnit.builtinCommand.prototype.go = function () {
   var that = this;
-  
+
   var pipes = {
     dataIn: this.process.stdin,
     dataOut: this.process.stdout,
@@ -256,7 +256,7 @@ exports.commandUnit.builtinCommand.prototype.go = function () {
     that.process.emit('exit', !success);
     that.exit(success, object);
   };
-  
+
   async(function () {
     that.handler.main.call(that, that.command, pipes, exit, this.environment);
   });
@@ -291,5 +291,3 @@ exports.commandUnit.unixCommand.prototype.go = function () {
   this.process.stdout.emit('data', headers.generate());
 
 };
-
-
