@@ -1,12 +1,12 @@
 var fs = require('fs'),
-    meta = require('shell/meta'),
-    view = require('view/view'),
-    asyncCallback = require('misc').asyncCallback;
-    async = require('misc').async,
-    extend = require('misc').extend,
-    JSONPretty = require('misc').JSONPretty,
-    composePath = require('misc').composePath,
-    expandPath = require('misc').expandPath;
+    meta = require('./meta'),
+    view = require('../view/view'),
+    asyncCallback = require('../misc').asyncCallback;
+    async = require('../misc').async,
+    extend = require('../misc').extend,
+    JSONPretty = require('../misc').JSONPretty,
+    composePath = require('../misc').composePath,
+    expandPath = require('../misc').expandPath;
 
 // Is x an object?
 function isObject(x) {
@@ -60,7 +60,7 @@ exports.dataReader = function (dataIn, begin, exit, error) {
 };
 
 exports.dataReader.prototype = {
-  
+
   /**
    * Parse headers string into headers object.
    */
@@ -68,7 +68,7 @@ exports.dataReader.prototype = {
     this.headers = new meta.headers();
     this.headers.parse(headers);
   },
-  
+
   /**
    * Read stream, find MIME headers.
    */
@@ -77,7 +77,7 @@ exports.dataReader.prototype = {
       // Swallow data until we encounter the MIME header delimiter.
       this.lookahead += data.toString('ascii');
       if (this.lookahead.indexOf("\r\n\r\n") != -1) {
-        
+
         // Parse headers.
         var chunk = this.lookahead.split("\r\n\r\n").shift();
         this.parse(chunk);
@@ -132,7 +132,7 @@ exports.dataReader.prototype = {
    * Finish reading.
    */
   done: function () {
-    
+
     // No data.
     if (!this.handler) {
       return this.exit();
@@ -159,7 +159,7 @@ exports.dataReader.prototype = {
     this.handler.end && this.handler.end(this.exit);
 
   },
-  
+
 };
 
 /**
@@ -185,7 +185,7 @@ exports.fileReader = function (file, begin, exit, error) {
 };
 
 exports.fileReader.prototype = {
-  
+
   /**
    * Open file, determine type, begin reading.
    */
@@ -211,7 +211,7 @@ exports.fileReader.prototype = {
             that.error("Unable to open file (" + that.file + ")");
             return;
           }
-        
+
           var position = 0;
           (function read() {
             var buffer = new Buffer(chunkSize);
@@ -236,20 +236,20 @@ exports.fileReader.prototype = {
 
                 // Get handler and begin processing.
                 that.handler = that.begin(headers);
-                that.buffered = that.handler.begin && that.handler.begin(headers);              
+                that.buffered = that.handler.begin && that.handler.begin(headers);
               }
-            
+
               // If buffered, read file and return.
               if (that.buffered) {
                 that.buffer = new Buffer(stats.size);
-              
+
                 fs.read(fd, that.buffer, 0, stats.size, 0, track(function (err, bytesRead) {
                   var slice = buffer.slice(0, bytesRead);
                   that.data(slice);
                 }));
                 return;
               }
-            
+
               // Process slice.
               that.data(slice);
               position += bytesRead;
@@ -263,7 +263,7 @@ exports.fileReader.prototype = {
       })); // fs.stat
     })); // expandPath
   },
-  
+
   /**
    * Send data to handler.
    */
@@ -275,7 +275,7 @@ exports.fileReader.prototype = {
    * Finish reading.
    */
   done: function () {
-    
+
     // No data.
     if (!this.handler) {
       return this.exit();
@@ -284,7 +284,7 @@ exports.fileReader.prototype = {
     this.handler.end && this.handler.end(this.exit);
 
   },
-  
+
 };
 
 
@@ -305,7 +305,7 @@ exports.filesReader = function (files, begin, exit, error) {
   this.begin = begin || (function () {});
   this.exit = exit || (function () {});
   this.error = error || (function () {});
-  
+
   this.offset = 0;
   this.buffer = null;
 
@@ -313,7 +313,7 @@ exports.filesReader = function (files, begin, exit, error) {
 };
 
 exports.filesReader.prototype = {
-  
+
   /**
    * Open files, determine output type, begin reading.
    */
@@ -343,9 +343,9 @@ exports.filesReader.prototype = {
           that.error("No such file (" + file + ")");
           return;
         }
-        
+
         size += stats.size;
-        
+
         // Read beginning of file for sniffing.
         fs.open(file, 'r', track(function (err, fd) {
           if (err) {
@@ -370,32 +370,32 @@ exports.filesReader.prototype = {
           })); // fs.read
         })); // fs.open
       })); // fs.stat
-      
+
     })(this.files[i]);
-    
+
     // Ensure tracker completes without files.
     if (this.files.length == 0) {
       that.done();
     }
   },
-  
+
   /**
    * Determine common mime type for files.
    */
   type: function (types) {
-    
+
     // Single type.
     if (types.length == 1) {
       return types[0];
     }
-    
+
     // Merge multiple types.
     var merged = {}, hasParams = false;
     for (var i in types) {
       // Process params.
       if (isArray(types[i])) {
         var params = types[i][1];
-        
+
         // Only merge identical params.
         for (var j in params) {
           if (merged[j] === null) continue;
@@ -414,7 +414,7 @@ exports.filesReader.prototype = {
       hasParams = true;
       break;
     }
-    
+
     function commonPrefix(types) {
       // Sort types, inspect first/last strings.
       types.sort();
@@ -431,22 +431,22 @@ exports.filesReader.prototype = {
           break;
         }
       }
-      
+
       return match;
     }
-    
+
     var type = 'application/octed-stream';
-    
+
     prefix = commonPrefix(types);
-    if (!(/^[^\/]+\/[^\/]+$/(prefix))) {
+    if (!(/^[^\/]+\/[^\/]+$/.test(prefix))) {
       // If we only matched a type category (e.g. text/),
       // coerce types to their base.
       types = types.map(function (type) {
         return meta.base(type);
       });
       prefix = commonPrefix(types);
-      
-      if (!(/^[^\/]+\/[^\/]+$/(prefix))) {
+
+      if (!(/^[^\/]+\/[^\/]+$/.test(prefix))) {
         // Replace with generic type.
         type = meta.default(prefix) || 'application/octet-stream';
       }
@@ -466,11 +466,11 @@ exports.filesReader.prototype = {
         }
       }
     }
-    
+
     // Return with or without merged params.
     return hasParams ? [ type, merged ] : type;
   },
-  
+
   /**
    * Begin reading files.
    */
@@ -497,7 +497,7 @@ exports.filesReader.prototype = {
     if (this.buffered) {
       this.buffer = new Buffer(size);
     }
-    
+
     // File reader pass-through handler.
     var handler = {
       // Already determined mime type.
@@ -517,7 +517,7 @@ exports.filesReader.prototype = {
         that.error(error);
       });
     }
-    
+
     // Process all files in sequence, asynchronously.
     var files = files.slice();
     (function nextFile() {
@@ -553,7 +553,7 @@ exports.filesReader.prototype = {
    * Finish reading.
    */
   done: function () {
-    
+
     // No data.
     if (!this.handler) {
       return this.exit();
@@ -566,5 +566,5 @@ exports.filesReader.prototype = {
 
     this.handler.end && this.handler.end(this.exit);
   },
-  
+
 };

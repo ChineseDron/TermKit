@@ -1,6 +1,6 @@
-var command = require('shell/command'),
-    returnMeta = require('misc').returnMeta,
-    autocomplete = require('shell/autocomplete').autocomplete;
+var command = require('./command'),
+    returnMeta = require('../misc').returnMeta,
+    autocomplete = require('./autocomplete').autocomplete;
 
 /**
  * Message processor.
@@ -13,7 +13,7 @@ var workerProcessor = exports.processor = function (inStream, outStream) {
   inStream.on('data', function (data) { that.data(data); });
   inStream.on('end', function () { });
   this.outStream = outStream;
-  
+
   this.buffer = '';
   this.views = {};
   this.config = {};
@@ -35,7 +35,7 @@ exports.processor.prototype = {
     var data = JSON.stringify(message);
     this.outStream.write(data + "\u0000");
   },
-  
+
   // Parse JSON command.
   receive: function (data) {
     try {
@@ -43,7 +43,7 @@ exports.processor.prototype = {
       if (typeof message == 'object') {
         var that = this,
             exit, returned;
-            
+
         // Find handler.
         var handler = workerProcessor.handlers[message.method];
 
@@ -51,7 +51,7 @@ exports.processor.prototype = {
         if (typeof message.query == 'number') {
           // Define convenient exit callback.
           exit = function (success, object, meta) {
-            
+
             if (!returned) {
               // Format return value.
               meta = meta || {};
@@ -88,17 +88,17 @@ exports.processor.prototype = {
     catch (e) {
     }
   },
-  
+
   // Establish a view stream.
   attach: function (view) {
     this.views[view.id] = view;
   },
-  
+
   // Drop a view stream.
   detach: function (view) {
     delete this.views[view.id];
   },
-  
+
   // Invoke an asynchronous method.
   notify: function (method, args) {
     var message = {
@@ -112,7 +112,7 @@ exports.processor.prototype = {
   status: function (success, object) {
     this._status = { success: success, data: object };
   },
-  
+
   // Return the environment.
   environment: function () {
     return {
@@ -130,7 +130,7 @@ exports.processor.prototype = {
 };
 
 workerProcessor.handlers = {
-  
+
   /**
    * Set/update worker configuration.
    */
@@ -145,7 +145,7 @@ workerProcessor.handlers = {
   "shell.environment": function (args, exit) {
     exit(true, this.environment());
   },
-  
+
   /**
    * Autocomplete the command line.
    */
@@ -154,7 +154,7 @@ workerProcessor.handlers = {
         offset = args.offset,
         cwd = args.cwd,
         ignoreCase = !!args.ignoreCase;
-    
+
     if (offset >= tokens.length) return exit(false);
 
     var auto = new autocomplete(),
@@ -163,9 +163,9 @@ workerProcessor.handlers = {
     auto.process(cwd, path, tokens, offset, function (matches) {
       exit(true, { matches: matches });
     }, ignoreCase);
-    
+
   },
-  
+
   /**
    * Run a shell command.
    */
@@ -196,5 +196,5 @@ workerProcessor.handlers = {
       exit(false);
     };
   },
-  
+
 };
